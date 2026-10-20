@@ -10,7 +10,7 @@
 <section class="card control-panel" id="quickPublish">
 <div class="panel-head"><div><div class="eyebrow">LIVE LINK CONTROL</div><h2>Generator &amp; Push Web Utama</h2><p class="muted">Satu panel untuk dua logika unlocker. Hasil URL tidak ditampilkan sebagai keluaran utama; sistem menampilkan DONE hanya setelah Web Utama mengonfirmasi pembaruan.</p></div><span class="live-dot">CONTROL</span></div>
 <div class="fields">
-<div class="field full"><label for="publishMediafire">Link tujuan MediaFire</label><input id="publishMediafire" type="url" placeholder="Tempel link MediaFire di sini, https://www.mediafire.com/file/..." autocomplete="url"></div>
+<div class="field full link-only" id="mediafireField"><label for="publishMediafire">Link tujuan MediaFire</label><input id="publishMediafire" type="url" placeholder="Tempel link MediaFire di sini, https://www.mediafire.com/file/..." autocomplete="url"></div>
 <div class="field"><label for="publishMode">Logika generator</label><select id="publishMode"><option value="link">Link Dicky News</option><option value="like">Like &amp; Comment</option></select></div>
 <div class="field full" id="likeCommentFields" hidden>
 <label for="publishYoutube">Link video YouTube untuk Like &amp; Comment</label>
@@ -51,7 +51,7 @@ $('exportAll').onclick=()=>{try{validate();persist();let t=json();$('jsonOutput'
 
 const modeSelect=document.getElementById('publishMode');
 const likeFields=document.getElementById('likeCommentFields');
-function syncLikeFields(){const on=modeSelect.value==='like';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;document.getElementById('publishMediafire').required=true;}
+function syncLikeFields(){const on=modeSelect.value==='like';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;document.getElementById('publishMediafire').required=!on;}
 modeSelect.addEventListener('change',syncLikeFields);syncLikeFields();
 const PUSH_ENDPOINT=''; // Isi hanya dengan endpoint backend HTTPS yang terverifikasi; jangan menaruh token GitHub di HTML publik.
 const mainButton=document.getElementById('openMainDirect');if(mainButton)mainButton.addEventListener('click',()=>window.open('https://dickynews.github.io/download/','_blank','noopener'));
@@ -63,7 +63,7 @@ if(pushButton)pushButton.addEventListener('click',async()=>{
  const version=document.getElementById('publishVersion').value.trim();
  const targets=[...document.querySelectorAll('#quickPublish .target input:checked')].map(x=>x.value);
  const fail=(title,detail)=>{result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>'+title+'</strong><p>'+detail+'</p></div>';};
- if(!/^https:\/\/([\w-]+\.)?mediafire\.com\//i.test(media)){fail('FAILED · Link tidak valid','Tempel URL MediaFire HTTPS yang benar.');return;}
+ if(mode==='link'&&!/^https:\/\/([\w-]+\.)?mediafire\.com\//i.test(media)){fail('FAILED · Link tidak valid','Tempel URL MediaFire HTTPS yang benar.');return;}
  if(mode==='link'&&!targets.length){fail('FAILED · Belum memilih tombol','Pilih minimal satu tombol WhatsApp Web Utama.');return;}
  const youtube=document.getElementById('publishYoutube').value.trim();
  const password=document.getElementById('publishPassword').value;
