@@ -89,4 +89,33 @@ if(pushButton)pushButton.addEventListener('click',async()=>{
  finally{pushButton.disabled=false;pushButton.textContent='Generate & Push Web Utama';}
 });
 try{let d=JSON.parse(localStorage.getItem(KEY)||'null');if(d){let all={...d.download,...d.tasks,...d.routes};ids.forEach(id=>{if(typeof all[id]==='string'&&$(id))$(id).value=all[id]})}}catch(e){}$('jsonOutput').value=json();
+
+/* Unified Link Dicky News + Like & Comment unlocker: same HTML, selected by ?module= */
+(function(){
+ const q=new URLSearchParams(location.search), module=q.get('module');
+ if(!module || !q.get('v')) return;
+ let data;
+ try { let raw=q.get('v').replace(/-/g,'+').replace(/_/g,'/'); while(raw.length%4)raw+='='; data=JSON.parse(decodeURIComponent(escape(atob(raw)))); }
+ catch(e){ document.body.innerHTML='<main class="unified"><h1>Link tidak valid</h1><p>Parameter akses rusak atau tidak lengkap.</p></main>'; return; }
+ const css=document.createElement('style'); css.textContent='body{margin:0;background:#09090b;color:#f5f5f7;font:16px system-ui,sans-serif}.unified{max-width:560px;margin:8vh auto;padding:28px;border:1px solid #34343a;border-radius:24px;background:linear-gradient(145deg,#17171c,#0c0c0f);box-sizing:border-box}.unified h1{font-size:28px}.unified p{color:#b6b6c0;line-height:1.6}.unified input,.unified button{box-sizing:border-box;width:100%;padding:16px;margin:10px 0;border-radius:13px;font:inherit}.unified input{background:#09090b;color:white;border:1px solid #444}.unified button{border:0;background:#ffd400;color:#111;font-weight:700}.unified button.alt{background:#29292f;color:white}.unified .status{margin-top:14px;color:#ffd95c}'; document.head.appendChild(css);
+ document.body.innerHTML='<main class="unified" id="unified"></main>'; const root=document.getElementById('unified');
+ const safe=(s)=>String(s||'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+ const dest=String(data.url||data.dest||'');
+ if(module==='link'){
+  if(!/^https:\/\/(?:[\w-]+\.)?mediafire\.com\//i.test(dest)){root.innerHTML='<h1>Link tujuan tidak valid</h1>';return;}
+  const socials=[['Subscribe YouTube Utama','https://youtube.com/@dickynews'],['Subscribe YouTube Kedua','https://www.youtube.com/@GODickyNews'],['Follow Instagram','https://www.instagram.com/dickynews'],['Follow TikTok','https://www.tiktok.com/@dickynewsyt'],['Follow Facebook','https://www.facebook.com/dickynews45']];
+  root.innerHTML='<h1>Verifikasi Akses</h1><p>Selesaikan langkah sosial untuk membuka tujuan.</p><div id="tasks"></div><button id="final" style="display:none">AKSES LINK TUJUAN</button>';
+  let idx=0,attempt=1; const tasks=root.querySelector('#tasks');
+  socials.forEach((s,i)=>{const b=document.createElement('button');b.className='alt';b.textContent=(i+1)+'. '+s[0];b.disabled=i!==0;b.onclick=()=>{window.open(s[1],'_blank','noopener');b.disabled=true;let n=15;const t=setInterval(()=>{b.textContent='Verifikasi '+n+'s';if(n--<=0){clearInterval(t);if(attempt===1){attempt=2;b.disabled=false;b.textContent='Gagal verifikasi — klik ulang: '+s[0]}else{b.textContent='BERHASIL';idx++;attempt=1;const next=tasks.children[idx];if(next)next.disabled=false;else root.querySelector('#final').style.display='block'}}},1000)};tasks.appendChild(b)});
+  root.querySelector('#final').onclick=()=>location.href=dest;
+ } else if(module==='like'){
+  const yt=String(data.yt||''), ps=String(data.ps||'');
+  if(!/^https:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i.test(yt)||!ps){root.innerHTML='<h1>Data unlocker tidak valid</h1>';return;}
+  root.innerHTML='<h1>Unlock Access</h1><p>Pilih akses VIP menggunakan password atau jalur tugas Like & Comment.</p><input id="pw" type="password" placeholder="Masukkan password unlocker"><button id="vip">UNLOCK DENGAN PASSWORD</button><p style="text-align:center">ATAU</p><button class="alt" id="task">UNLOCK DENGAN LIKE & COMMENT</button><div class="status" id="status"></div>';
+  root.querySelector('#vip').onclick=()=>{if(root.querySelector('#pw').value===ps)go(true);else root.querySelector('#status').textContent='Password salah. Silakan coba lagi.'};
+  let attempt=1;root.querySelector('#task').onclick=()=>{const b=root.querySelector('#task');window.open(yt,'_blank','noopener');b.disabled=true;let n=15;const t=setInterval(()=>{b.textContent='Verifikasi '+n+'s';if(n--<=0){clearInterval(t);if(attempt===1){attempt=2;b.disabled=false;b.textContent='KLIK ULANG UNTUK LIKE & COMMENT';root.querySelector('#status').textContent='Klik ulang setelah menyelesaikan tugas di video.'}else go(false)}},1000)};
+  function go(vip){root.innerHTML='<h1>Success</h1><p>Membuka tujuan…</p>';setTimeout(()=>location.href=vip?'https://dickynews.github.io/download/?method=bypass':'https://dickynews.github.io/download/',900)}
+ } else {root.innerHTML='<h1>Modul tidak dikenal</h1>'}
+})();
+
 </script></body></html>
