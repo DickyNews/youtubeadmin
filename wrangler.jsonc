@@ -1,0 +1,8 @@
+{
+  "name": "dickynews-publisher",
+  "main": "cloudflare-worker.js",
+  "compatibility_date": "2026-10-20",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://dickynews.github.io"
+  }
+}
