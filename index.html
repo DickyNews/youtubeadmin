@@ -71,7 +71,7 @@ if(pushButton)pushButton.addEventListener('click',async()=>{
   if(!/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)){fail('FAILED · Link YouTube tidak valid','Mode Like & Comment membutuhkan link video YouTube yang benar.');return;}
   if(!password.trim()){fail('FAILED · Password belum diisi','Masukkan password unlocker untuk mode Like & Comment.');return;}
  }
- if(!PUSH_ENDPOINT){fail('BELUM TERHUBUNG · Push belum aktif','Generator siap, tetapi endpoint backend aman belum dikonfigurasi. Web Utama tidak diubah dan status DONE tidak akan dipalsukan.');return;}
+ if(!PUSH_ENDPOINT){result.className='publish-result failed';result.innerHTML='<span class="result-icon">↗</span><div><strong>Publikasi melalui GitHub Actions</strong><p>GitHub Pages tidak bisa menulis ke repository secara aman langsung dari browser. Buka workflow publikasi, lalu masukkan tombol dan link MediaFire yang sama. Status DONE hanya muncul setelah workflow selesai berhasil.</p><p><a href="https://github.com/DickyNews/download/actions/workflows/publish-web-utama-link.yml" target="_blank" rel="noopener" style="color:#ffdf35;font-weight:800">BUKA PUBLIKASI WEB UTAMA ↗</a></p></div>';return;}
  let generatedUrl;
  try{
   const payload=mode==='like'?{yt:youtube,ps:password,dest:media}:{url:media};
