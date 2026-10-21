@@ -66,6 +66,24 @@ export default {
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = env.ALLOWED_ORIGIN || "https://dickynews.github.io";
 
+    // Public global visitor counter: one count per visitor fingerprint per 5-minute session.
+    if (request.method === "GET" && requestUrl.pathname === "/visitor") {
+      if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Visitor storage is not configured."},503,allowedOrigin);
+      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+      const ua = request.headers.get("User-Agent") || "unknown";
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip + "|" + ua));
+      const fingerprint = [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,40);
+      const sessionKey = "session:" + fingerprint;
+      const alreadyCounted = await env.DICKY_VISITOR_COUNTER.get(sessionKey);
+      if (!alreadyCounted) {
+        const current = Number(await env.DICKY_VISITOR_COUNTER.get("total")) || 17875323;
+        await env.DICKY_VISITOR_COUNTER.put("total", String(current + 1));
+        await env.DICKY_VISITOR_COUNTER.put(sessionKey, "1", {expirationTtl:300});
+      }
+      const total = Number(await env.DICKY_VISITOR_COUNTER.get("total")) || 17875323;
+      return json({success:true,total},200,allowedOrigin);
+    }
+
     // Public, read-only health check. Deliberately returns no secrets or configuration.
     const requestUrl = new URL(request.url);
     if (request.method === "GET" && requestUrl.pathname === "/health") {
