@@ -4,5 +4,11 @@
   "compatibility_date": "2026-10-20",
   "vars": {
     "ALLOWED_ORIGIN": "https://dickynews.github.io"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "DICKY_VISITOR_COUNTER",
+      "id": "c77af2da6832499ba3475720966d0132"
+    }
+  ]
 }
