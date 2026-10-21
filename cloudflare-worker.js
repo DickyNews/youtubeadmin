@@ -76,11 +76,11 @@ export default {
       const sessionKey = "session:" + fingerprint;
       const alreadyCounted = await env.DICKY_VISITOR_COUNTER.get(sessionKey);
       if (!alreadyCounted) {
-        const current = Number(await env.DICKY_VISITOR_COUNTER.get("total")) || 17875323;
+        const current = Number(await env.DICKY_VISITOR_COUNTER.get("total")) || 17875322;
         await env.DICKY_VISITOR_COUNTER.put("total", String(current + 1));
         await env.DICKY_VISITOR_COUNTER.put(sessionKey, "1", {expirationTtl:300});
       }
-      const total = Number(await env.DICKY_VISITOR_COUNTER.get("total")) || 17875323;
+      const total = Number(await env.DICKY_VISITOR_COUNTER.get("total")) || 17875322;
       return json({success:true,total},200,allowedOrigin);
     }
 
