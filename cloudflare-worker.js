@@ -108,19 +108,23 @@ export default {
     try { payload = await request.json(); } catch { return json({success:false,message:"JSON tidak valid."},400,allowedOrigin); }
     if (payload.action !== "update_download_links") return json({success:false,message:"Action tidak dikenal."},400,allowedOrigin);
     if (payload.mode !== "link") return json({success:false,message:"Publikasi otomatis saat ini hanya mendukung mode Link Dicky News."},400,allowedOrigin);
-    const targets = Array.isArray(payload.targets) ? payload.targets : [];
-    if (!targets.length || targets.some(t => !ALLOWED_TARGETS.has(t)) || new Set(targets).size !== targets.length)
-      return json({success:false,message:"Pilih tombol yang valid tanpa duplikat."},400,allowedOrigin);
-    if (!validMediaFire(String(payload.mediafire_url || ""))) return json({success:false,message:"URL MediaFire HTTPS tidak valid."},400,allowedOrigin);
+    const items = payload.items && typeof payload.items === "object" && !Array.isArray(payload.items) ? payload.items : {};
+    const targets = Object.keys(items);
+    if (!targets.length || targets.some(t => !ALLOWED_TARGETS.has(t)))
+      return json({success:false,message:"Pilih tombol yang valid."},400,allowedOrigin);
+    for (const target of targets) {
+      const item = items[target] || {};
+      if (!validMediaFire(String(item.mediafire_url || "")))
+        return json({success:false,message:"URL MediaFire HTTPS tidak valid untuk " + target + "."},400,allowedOrigin);
+      const suffix = String(item.version_suffix || "").trim();
+      if (suffix && !/^[vV]?[0-9]+(?:[._+-][0-9A-Za-z]+)*$/.test(suffix))
+        return json({success:false,message:"Format versi tidak valid untuk " + target + "."},400,allowedOrigin);
+    }
 
     const dispatchedAt = Date.now();
     const dispatch = await gh(`/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,env,"POST",{
       ref: BRANCH,
-      inputs: {
-        targets: targets.join(","),
-        mediafire_url: String(payload.mediafire_url).trim(),
-        version_suffix: String(payload.version_suffix || "").trim()
-      }
+      inputs: { target_config: JSON.stringify(items) }
     });
     if (dispatch.status !== 204) {
       const detail = await dispatch.text();
