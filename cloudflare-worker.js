@@ -105,7 +105,8 @@ export default {
       ref: BRANCH,
       inputs: {
         targets: targets.join(","),
-        mediafire_url: String(payload.mediafire_url).trim()
+        mediafire_url: String(payload.mediafire_url).trim(),
+        version_suffix: String(payload.version_suffix || "").trim()
       }
     });
     if (dispatch.status !== 204) {
