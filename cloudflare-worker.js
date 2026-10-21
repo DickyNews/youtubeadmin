@@ -65,6 +65,16 @@ export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = env.ALLOWED_ORIGIN || "https://dickynews.github.io";
+
+    // Public, read-only health check. Deliberately returns no secrets or configuration.
+    const requestUrl = new URL(request.url);
+    if (request.method === "GET" && requestUrl.pathname === "/health") {
+      return new Response(JSON.stringify({success:true,service:"dickynews-publisher",status:"ok"}), {
+        status: 200,
+        headers: {"content-type":"application/json; charset=utf-8","cache-control":"no-store"}
+      });
+    }
+
     if (request.method === "OPTIONS") {
       if (origin !== allowedOrigin) return new Response(null, {status: 403});
       return new Response(null, {status: 204, headers: {
