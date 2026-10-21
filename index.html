@@ -10,6 +10,7 @@
 <section class="card control-panel" id="quickPublish">
 <div class="panel-head"><div><div class="eyebrow">LIVE LINK CONTROL</div><h2>Generator &amp; Push Web Utama</h2><p class="muted">Satu panel untuk dua logika unlocker. Hasil URL tidak ditampilkan sebagai keluaran utama; sistem menampilkan DONE hanya setelah Web Utama mengonfirmasi pembaruan.</p></div><span class="live-dot">CONTROL</span></div>
 <div class="fields">
+<div class="field full"><label for="publishAdminKey">Kunci admin Worker (ADMIN_API_KEY)</label><input id="publishAdminKey" type="password" placeholder="Masukkan kunci admin yang kamu simpan pribadi" autocomplete="off"><p class="muted small">Kunci hanya dipakai saat tombol publikasi ditekan dan tidak disimpan ke draf maupun HTML.</p></div>
 <div class="field full link-only" id="mediafireField"><label for="publishMediafire">Link tujuan MediaFire</label><input id="publishMediafire" type="url" placeholder="Tempel link MediaFire di sini, https://www.mediafire.com/file/..." autocomplete="url"></div>
 <div class="field"><label for="publishMode">Logika generator</label><select id="publishMode"><option value="link">Link Dicky News</option><option value="like">Like &amp; Comment</option></select></div>
 <div class="field full" id="likeCommentFields" hidden>
@@ -53,39 +54,53 @@ const modeSelect=document.getElementById('publishMode');
 const likeFields=document.getElementById('likeCommentFields');
 function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;document.getElementById('publishMediafire').required=!on;}
 modeSelect.addEventListener('change',syncLikeFields);syncLikeFields();
-const PUSH_ENDPOINT=''; // Isi hanya dengan endpoint backend HTTPS yang terverifikasi; jangan menaruh token GitHub di HTML publik.
+const PUSH_ENDPOINT='https://dickynews-publisher.alinkdicky45.workers.dev';
 const mainButton=document.getElementById('openMainDirect');if(mainButton)mainButton.addEventListener('click',()=>window.open('https://dickynews.github.io/download/','_blank','noopener'));
 const pushButton=document.getElementById('generatePush');
 if(pushButton)pushButton.addEventListener('click',async()=>{
  const result=document.getElementById('publishResult');
  const media=document.getElementById('publishMediafire').value.trim();
  const mode=document.getElementById('publishMode').value;
- const version=document.getElementById('publishVersion').value.trim();
+ const adminKey=document.getElementById('publishAdminKey').value.trim();
  const targets=[...document.querySelectorAll('#quickPublish .target input:checked')].map(x=>x.value);
  const fail=(title,detail)=>{result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>'+title+'</strong><p>'+detail+'</p></div>';};
- if(mode==='link'&&!/^https:\/\/([\w-]+\.)?mediafire\.com\//i.test(media)){fail('FAILED · Link tidak valid','Tempel URL MediaFire HTTPS yang benar.');return;}
- if(mode==='link'&&!targets.length){fail('FAILED · Belum memilih tombol','Pilih minimal satu tombol WhatsApp Web Utama.');return;}
- const youtube=document.getElementById('publishYoutube').value.trim();
- const password=document.getElementById('publishPassword').value;
- if(mode==='like'){
-  if(!/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)){fail('FAILED · Link YouTube tidak valid','Mode Like & Comment membutuhkan link video YouTube yang benar.');return;}
-  if(!password.trim()){fail('FAILED · Password belum diisi','Masukkan password unlocker untuk mode Like & Comment.');return;}
- }
- if(!PUSH_ENDPOINT){result.className='publish-result failed';result.innerHTML='<span class="result-icon">↗</span><div><strong>Publikasi melalui GitHub Actions</strong><p>GitHub Pages tidak bisa menulis ke repository secara aman langsung dari browser. Buka workflow publikasi, lalu masukkan tombol dan link MediaFire yang sama. Status DONE hanya muncul setelah workflow selesai berhasil.</p><p><a href="https://github.com/DickyNews/download/actions/workflows/publish-web-utama-link.yml" target="_blank" rel="noopener" style="color:#ffdf35;font-weight:800">BUKA PUBLIKASI WEB UTAMA ↗</a></p></div>';return;}
- let generatedUrl;
+ if(!adminKey){fail('Kunci admin diperlukan','Masukkan ADMIN_API_KEY yang kamu simpan pribadi. Jangan kirim kunci ini ke chat.');return;}
+ if(mode!=='link'){fail('Mode belum didukung untuk sinkronisasi','Sinkronisasi otomatis yang aktif saat ini adalah Link Dicky News. Mode Like & Comment belum dipublikasikan oleh workflow.');return;}
+ if(!/^https:\/\/([\w-]+\.)?mediafire\.com\/(file|download)\//i.test(media)){fail('FAILED · Link tidak valid','Tempel URL MediaFire HTTPS yang benar.');return;}
+ if(!targets.length){fail('FAILED · Belum memilih tombol','Pilih minimal satu tombol WhatsApp Web Utama.');return;}
+ pushButton.disabled=true;pushButton.textContent='Mengirim…';
+ result.className='publish-result';result.innerHTML='<span class="result-icon">…</span><div><strong>Workflow sedang dimulai</strong><p>Menunggu GitHub Actions menjalankan publikasi.</p></div>';
  try{
-  const payload=mode==='like'?{yt:youtube,ps:password,dest:media}:{url:media};
-  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_');
-  generatedUrl='https://dickynews.github.io/youtubeadmin/?module='+encodeURIComponent(mode)+'&v='+encoded;
- }catch(e){fail('FAILED · Generate gagal','Data tujuan tidak dapat diproses.');return;}
- pushButton.disabled=true;pushButton.textContent='Memproses…';
- result.className='publish-result';result.innerHTML='<span class="result-icon">…</span><div><strong>Memproses pembaruan</strong><p>Menunggu konfirmasi dari Web Utama.</p></div>';
- try{
-  const response=await fetch(PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update_download_links',mode,mediafire_url:media,generated_url:generatedUrl,version,targets})});
+  const response=await fetch(PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+adminKey},body:JSON.stringify({action:'update_download_links',mode:'link',mediafire_url:media,targets})});
   const data=await response.json().catch(()=>({}));
-  if(!response.ok||data.success!==true){fail('FAILED · Web Utama belum diperbarui',data.message||('Server mengembalikan HTTP '+response.status+'.'));return;}
-  result.className='publish-result done';result.innerHTML='<span class="result-icon">✓</span><div><strong>DONE · Web Utama berhasil diperbarui</strong><p>'+targets.length+' tombol telah dikonfirmasi oleh server.</p></div>';
- }catch(error){fail('FAILED · Tidak tersambung','Backend tidak dapat dihubungi. Web Utama belum dikonfirmasi berubah.');}
+  if(!response.ok||data.success!==true){fail('FAILED · Permintaan ditolak',data.message||('Server mengembalikan HTTP '+response.status+'.'));return;}
+  if(!data.run_id){
+   result.className='publish-result';result.innerHTML='<span class="result-icon">…</span><div><strong>Workflow diterima, status belum tersedia</strong><p>Buka GitHub Actions untuk memeriksa proses. Belum dinyatakan DONE.</p><p><a href="https://github.com/DickyNews/download/actions/workflows/publish-web-utama-link.yml" target="_blank" rel="noopener" style="color:#ffdf35;font-weight:800">LIHAT WORKFLOW ↗</a></p></div>';
+   return;
+  }
+  const runId=String(data.run_id);
+  result.innerHTML='<span class="result-icon">…</span><div><strong>Publikasi berjalan</strong><p>Memeriksa hasil GitHub Actions…</p></div>';
+  let completed=false;
+  for(let i=0;i<60;i++){
+   await new Promise(resolve=>setTimeout(resolve,3000));
+   const sr=await fetch(PUSH_ENDPOINT+'/status?run_id='+encodeURIComponent(runId),{headers:{'Authorization':'Bearer '+adminKey}});
+   const st=await sr.json().catch(()=>({}));
+   if(!sr.ok||st.success!==true)throw new Error(st.message||'Tidak bisa membaca status workflow.');
+   if(st.status==='completed'){
+    completed=true;
+    if(st.conclusion==='success'){
+     result.className='publish-result done';
+     result.innerHTML='<span class="result-icon">✓</span><div><strong>DONE · Workflow berhasil</strong><p>GitHub Actions menyelesaikan publikasi untuk '+targets.length+' tombol. <a href="'+st.html_url+'" target="_blank" rel="noopener" style="color:#ffdf35">Lihat log ↗</a></p></div>';
+    }else{
+     fail('FAILED · Workflow tidak berhasil','GitHub Actions selesai dengan status '+String(st.conclusion||'unknown')+'. Web Utama belum dinyatakan berhasil.');
+    }
+    break;
+   }
+  }
+  if(!completed){
+   result.className='publish-result';result.innerHTML='<span class="result-icon">…</span><div><strong>Publikasi masih berjalan</strong><p>Belum ada konfirmasi selesai. <a href="https://github.com/DickyNews/download/actions/workflows/publish-web-utama-link.yml" target="_blank" rel="noopener" style="color:#ffdf35">Periksa GitHub Actions ↗</a></p></div>';
+  }
+ }catch(error){fail('FAILED · Status belum terverifikasi',error.message||'Worker tidak dapat dihubungi. Web Utama belum dikonfirmasi berubah.');}
  finally{pushButton.disabled=false;pushButton.textContent='Generate & Push Web Utama';}
 });
 try{let d=JSON.parse(localStorage.getItem(KEY)||'null');if(d){let all={...d.download,...d.tasks,...d.routes};ids.forEach(id=>{if(typeof all[id]==='string'&&$(id))$(id).value=all[id]})}}catch(e){}$('jsonOutput').value=json();
