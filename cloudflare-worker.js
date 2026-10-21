@@ -100,6 +100,7 @@ export default {
       return json({success:false,message:"Pilih tombol yang valid tanpa duplikat."},400,allowedOrigin);
     if (!validMediaFire(String(payload.mediafire_url || ""))) return json({success:false,message:"URL MediaFire HTTPS tidak valid."},400,allowedOrigin);
 
+    const dispatchedAt = Date.now();
     const dispatch = await gh(`/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,env,"POST",{
       ref: BRANCH,
       inputs: {
@@ -111,8 +112,20 @@ export default {
       const detail = await dispatch.text();
       return json({success:false,message:"GitHub menolak menjalankan workflow.",detail:detail.slice(0,300)},dispatch.status,allowedOrigin);
     }
-    // GitHub workflow_dispatch returns 204 and does not provide a run ID.
-    // The caller must use the repository Actions page or a later polling flow.
-    return json({success:true,accepted:true,message:"Workflow diterima GitHub. Tunggu status workflow sebelum menandai DONE."},202,allowedOrigin);
+    // workflow_dispatch returns 204 without a run ID. Find the newly created run.
+    let runId = null;
+    for (let attempt = 0; attempt < 8 && !runId; attempt++) {
+      if (attempt) await new Promise(resolve => setTimeout(resolve, 1000));
+      const runsResponse = await gh(`/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/runs?event=workflow_dispatch&per_page=10`,env);
+      if (!runsResponse.ok) continue;
+      const runsData = await runsResponse.json();
+      const run = (runsData.workflow_runs || []).find(item =>
+        item.event === "workflow_dispatch" &&
+        Date.parse(item.created_at || "") >= dispatchedAt - 5000
+      );
+      if (run) runId = String(run.id);
+    }
+    if (!runId) return json({success:true,accepted:true,run_id:null,message:"Workflow diterima GitHub, tetapi ID proses belum tersedia. Periksa tab Actions."},202,allowedOrigin);
+    return json({success:true,accepted:true,run_id:runId,message:"Workflow diterima GitHub."},202,allowedOrigin);
   }
 };
