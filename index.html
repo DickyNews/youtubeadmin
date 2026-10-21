@@ -10,7 +10,7 @@
 <section class="card control-panel" id="quickPublish">
 <div class="panel-head"><div><div class="eyebrow">LIVE LINK CONTROL</div><h2>Generator &amp; Push Web Utama</h2><p class="muted">Satu panel untuk dua logika unlocker. Hasil URL tidak ditampilkan sebagai keluaran utama; sistem menampilkan DONE hanya setelah Web Utama mengonfirmasi pembaruan.</p></div><span class="live-dot">CONTROL</span></div>
 <div class="fields">
-<div class="field full"><label for="publishAdminKey">Kunci admin Worker (ADMIN_API_KEY)</label><input id="publishAdminKey" type="password" placeholder="Masukkan kunci admin yang kamu simpan pribadi" autocomplete="off"><p class="muted small">Kunci hanya dipakai saat tombol publikasi ditekan dan tidak disimpan ke draf maupun HTML.</p></div>
+<div class="field full"><label for="publishAdminKey">Kunci admin Worker (isi sekali saja)</label><input id="publishAdminKey" type="password" placeholder="Isi sekali; otomatis tersimpan di browser ini" autocomplete="current-password"><p class="muted small" id="adminKeyHint">Kunci disimpan hanya di browser ini, bukan di HTML/GitHub. Jangan gunakan komputer umum.</p></div>
 <div class="field full link-only" id="mediafireField"><label for="publishMediafire">Link tujuan MediaFire</label><input id="publishMediafire" type="url" placeholder="Tempel link MediaFire di sini, https://www.mediafire.com/file/..." autocomplete="url"></div>
 <div class="field"><label for="publishMode">Logika generator</label><select id="publishMode"><option value="link">Link Dicky News</option><option value="like">Like &amp; Comment</option></select></div>
 <div class="field full" id="likeCommentFields" hidden>
@@ -55,11 +55,16 @@ const likeFields=document.getElementById('likeCommentFields');
 function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;document.getElementById('publishMediafire').required=!on;}
 modeSelect.addEventListener('change',syncLikeFields);syncLikeFields();
 const PUSH_ENDPOINT='https://dickynews-publisher.alinkdicky45.workers.dev';
+const ADMIN_KEY_STORAGE='dickynews_worker_admin_key_v1';
+const adminKeyInput=document.getElementById('publishAdminKey');
+function getAdminKey(){const typed=adminKeyInput.value.trim();if(typed){try{localStorage.setItem(ADMIN_KEY_STORAGE,typed);document.getElementById('adminKeyHint').textContent='Kunci tersimpan di browser ini. Berikutnya tidak perlu mengetik lagi.';}catch(e){}return typed;}try{return localStorage.getItem(ADMIN_KEY_STORAGE)||'';}catch(e){return '';}}
+try{const savedAdminKey=localStorage.getItem(ADMIN_KEY_STORAGE);if(savedAdminKey){adminKeyInput.value=savedAdminKey;document.getElementById('adminKeyHint').textContent='Kunci admin sudah tersimpan di browser ini; input otomatis terisi.';}}catch(e){}
+adminKeyInput.addEventListener('change',()=>{if(adminKeyInput.value.trim())getAdminKey();});
 const mainButton=document.getElementById('openMainDirect');
 if(mainButton)mainButton.addEventListener('click',async()=>{
  const result=document.getElementById('publishResult');
- const adminKey=document.getElementById('publishAdminKey').value.trim();
- if(!adminKey){result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>Kunci admin diperlukan</strong><p>Masukkan ADMIN_API_KEY terlebih dahulu agar Web Utama dibuka dalam mode akses langsung admin.</p></div>';return;}
+ const adminKey=getAdminKey();
+ if(!adminKey){result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>Kunci admin diperlukan</strong><p>Isi kunci admin satu kali agar Web Utama dibuka dalam mode akses langsung admin. Setelah tersimpan, input otomatis terisi.</p></div>';return;}
  mainButton.disabled=true;
  try{
   const response=await fetch(PUSH_ENDPOINT+'/verify',{headers:{'Authorization':'Bearer '+adminKey}});
@@ -78,7 +83,7 @@ if(pushButton)pushButton.addEventListener('click',async()=>{
  const result=document.getElementById('publishResult');
  const media=document.getElementById('publishMediafire').value.trim();
  const mode=document.getElementById('publishMode').value;
- const adminKey=document.getElementById('publishAdminKey').value.trim();
+ const adminKey=getAdminKey();
  const targets=[...document.querySelectorAll('#quickPublish .target input:checked')].map(x=>x.value);
   const versionSuffix=document.getElementById('publishVersion').value.trim();
  const fail=(title,detail)=>{result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>'+title+'</strong><p>'+detail+'</p></div>';};
