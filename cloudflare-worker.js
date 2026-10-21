@@ -81,6 +81,9 @@ export default {
     if (auth !== "Bearer " + env.ADMIN_API_KEY) return json({success:false,message:"Akses admin tidak sah."},401,allowedOrigin);
 
     const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname.endsWith("/verify")) {
+      return json({success:true,message:"Kunci admin valid."},200,allowedOrigin);
+    }
     if (request.method === "GET" && url.pathname.endsWith("/status")) {
       const runId = url.searchParams.get("run_id");
       if (!/^\d+$/.test(runId || "")) return json({success:false,message:"run_id tidak valid."},400,allowedOrigin);
