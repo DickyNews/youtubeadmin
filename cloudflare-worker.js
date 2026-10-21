@@ -65,6 +65,7 @@ export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = env.ALLOWED_ORIGIN || "https://dickynews.github.io";
+    const requestUrl = new URL(request.url);
 
     // Public global visitor counter: one count per visitor fingerprint per 5-minute session.
     if (request.method === "GET" && requestUrl.pathname === "/visitor") {
@@ -85,7 +86,6 @@ export default {
     }
 
     // Public, read-only health check. Deliberately returns no secrets or configuration.
-    const requestUrl = new URL(request.url);
     if (request.method === "GET" && requestUrl.pathname === "/health") {
       return new Response(JSON.stringify({success:true,service:"dickynews-publisher",status:"ok"}), {
         status: 200,
