@@ -55,7 +55,23 @@ const likeFields=document.getElementById('likeCommentFields');
 function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;document.getElementById('publishMediafire').required=!on;}
 modeSelect.addEventListener('change',syncLikeFields);syncLikeFields();
 const PUSH_ENDPOINT='https://dickynews-publisher.alinkdicky45.workers.dev';
-const mainButton=document.getElementById('openMainDirect');if(mainButton)mainButton.addEventListener('click',()=>window.open('https://dickynews.github.io/download/','_blank','noopener'));
+const mainButton=document.getElementById('openMainDirect');
+if(mainButton)mainButton.addEventListener('click',async()=>{
+ const result=document.getElementById('publishResult');
+ const adminKey=document.getElementById('publishAdminKey').value.trim();
+ if(!adminKey){result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>Kunci admin diperlukan</strong><p>Masukkan ADMIN_API_KEY terlebih dahulu agar Web Utama dibuka dalam mode akses langsung admin.</p></div>';return;}
+ mainButton.disabled=true;
+ try{
+  const response=await fetch(PUSH_ENDPOINT+'/verify',{headers:{'Authorization':'Bearer '+adminKey}});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||data.success!==true)throw new Error(data.message||'Verifikasi admin gagal.');
+  localStorage.setItem('dickynews_admin_direct_until',String(Date.now()+8*60*60*1000));
+  window.open('https://dickynews.github.io/download/?admin_direct=1','_blank','noopener');
+  result.className='publish-result';result.innerHTML='<span class="result-icon">✓</span><div><strong>Mode admin aktif selama 8 jam</strong><p>Tombol DOWNLOAD di Web Utama akan membuka link tujuan langsung pada browser ini.</p></div>';
+ }catch(e){
+  result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>Verifikasi admin gagal</strong><p>'+String(e.message||'Kunci tidak cocok.')+'</p></div>';
+ }finally{mainButton.disabled=false;}
+});
 const directButton=document.getElementById('openDirectMediafire');if(directButton)directButton.addEventListener('click',()=>{const raw=document.getElementById('publishMediafire').value.trim();let u;try{u=new URL(raw)}catch(e){}if(!u||u.protocol!=='https:'||!(u.hostname==='mediafire.com'||u.hostname==='www.mediafire.com')||!/^\/(file|download)\//i.test(u.pathname)){const result=document.getElementById('publishResult');result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>Link MediaFire belum valid</strong><p>Isi link MediaFire HTTPS yang benar untuk membukanya langsung.</p></div>';return;}window.open(u.href,'_blank','noopener');});
 const pushButton=document.getElementById('generatePush');
 if(pushButton)pushButton.addEventListener('click',async()=>{
