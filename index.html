@@ -18,7 +18,7 @@
 <div class="per-target-row" data-target="wa_enhancer_ori"><label class="target-choice"><input type="checkbox" value="wa_enhancer_ori"><span>WA Enhancer Original</span></label><input class="target-url" type="url" aria-label="Link MediaFire WA Enhancer Original" placeholder="Link MediaFire" autocomplete="url" hidden><input class="target-version" aria-label="Versi WA Enhancer Original" placeholder="Versi" inputmode="decimal" autocomplete="off" hidden></div>
 <div class="per-target-row" data-target="wa_enhancer_biz"><label class="target-choice"><input type="checkbox" value="wa_enhancer_biz"><span>WA Enhancer Business</span></label><input class="target-url" type="url" aria-label="Link MediaFire WA Enhancer Business" placeholder="Link MediaFire" autocomplete="url" hidden><input class="target-version" aria-label="Versi WA Enhancer Business" placeholder="Versi" inputmode="decimal" autocomplete="off" hidden></div></div></div>
 <div class="field"><label for="publishMode">Logika generator</label><select id="publishMode"><option value="link">Link Dicky News</option><option value="like">Like &amp; Comment</option></select></div>
-<div class="field full" id="likeCommentFields" hidden>
+<div class="field full" id="likeCommentFields">
 <label for="publishYoutube">Link video YouTube untuk Like &amp; Comment</label>
 <input id="publishYoutube" type="url" placeholder="https://youtu.be/..." autocomplete="url">
 <label for="publishPassword" style="display:block;margin-top:12px">Password unlocker</label>
@@ -49,7 +49,7 @@ $('exportAll').onclick=()=>{try{validate();persist();let t=json();$('jsonOutput'
 
 const modeSelect=document.getElementById('publishMode');
 const likeFields=document.getElementById('likeCommentFields');
-function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;}
+function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;likeFields.style.display=on?'block':'none';document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;}
 modeSelect.addEventListener('change',syncLikeFields);syncLikeFields();
 document.querySelectorAll('.per-target-row').forEach(row=>{const c=row.querySelector('input[type="checkbox"]'),u=row.querySelector('.target-url'),v=row.querySelector('.target-version');const sync=()=>{u.hidden=!c.checked;v.hidden=!c.checked;u.required=c.checked;v.required=false;};c.addEventListener('change',sync);sync();});
 const PUSH_ENDPOINT='https://dickynews-publisher.alinkdicky45.workers.dev';
