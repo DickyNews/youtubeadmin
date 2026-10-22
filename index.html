@@ -49,7 +49,7 @@ $('exportAll').onclick=()=>{try{validate();persist();let t=json();$('jsonOutput'
 
 const modeSelect=document.getElementById('publishMode');
 const likeFields=document.getElementById('likeCommentFields');
-function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;likeFields.style.display=on?'block':'none';document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;}
+function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;likeFields.style.display=on?'block':'none';likeFields.setAttribute('aria-hidden',String(!on));document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;}
 modeSelect.addEventListener('change',syncLikeFields);syncLikeFields();
 document.querySelectorAll('.per-target-row').forEach(row=>{const c=row.querySelector('input[type="checkbox"]'),u=row.querySelector('.target-url'),v=row.querySelector('.target-version');const sync=()=>{u.hidden=!c.checked;v.hidden=!c.checked;u.required=c.checked;v.required=false;};c.addEventListener('change',sync);sync();});
 const PUSH_ENDPOINT='https://dickynews-publisher.alinkdicky45.workers.dev';
