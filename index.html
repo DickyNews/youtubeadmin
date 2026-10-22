@@ -113,6 +113,11 @@ try{let d=JSON.parse(localStorage.getItem(KEY)||'null');if(d){let all={...d.down
  if(module==='link'){
   if(!/^https:\/\/(?:[\w-]+\.)?mediafire\.com\//i.test(dest)){root.innerHTML='<h1>Link tujuan tidak valid</h1>';return;}
   const socials=[['Subscribe YouTube Utama','https://youtube.com/@dickynews'],['Subscribe YouTube Kedua','https://www.youtube.com/@GODickyNews'],['Follow Instagram','https://www.instagram.com/dickynews'],['Follow TikTok','https://www.tiktok.com/@dickynewsyt'],['Follow Facebook','https://www.facebook.com/dickynews45']];
+  if(q.get('method')==='bypass'){
+   root.innerHTML='<h1>AKSES TERBUKA</h1><p>Password benar. Langkah sosial dilewati. Klik tombol di bawah untuk melanjutkan ke tujuan download.</p><button id="direct">AKSES LINK TUJUAN</button>';
+   root.querySelector('#direct').onclick=()=>location.href=dest;
+   return;
+  }
   root.innerHTML='<h1>Verifikasi Akses</h1><p>Selesaikan langkah sosial untuk membuka tujuan.</p><div id="tasks"></div><button id="final" style="display:none">AKSES LINK TUJUAN</button>';
   let idx=0,attempt=1; const tasks=root.querySelector('#tasks');
   socials.forEach((s,i)=>{const b=document.createElement('button');b.className='alt';b.textContent=(i+1)+'. '+s[0];b.disabled=i!==0;b.onclick=()=>{window.open(s[1],'_blank','noopener');b.disabled=true;let n=15;const t=setInterval(()=>{b.textContent='Verifikasi '+n+'s';if(n--<=0){clearInterval(t);if(attempt===1){attempt=2;b.disabled=false;b.textContent='Gagal verifikasi — klik ulang: '+s[0]}else{b.textContent='BERHASIL';idx++;attempt=1;const next=tasks.children[idx];if(next)next.disabled=false;else root.querySelector('#final').style.display='block'}}},1000)};tasks.appendChild(b)});
