@@ -66,6 +66,7 @@ export default {
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = env.ALLOWED_ORIGIN || "https://dickynews.github.io";
     const requestUrl = new URL(request.url);
+    const url = requestUrl;
 
     // Public global visitor counter: one count per visitor fingerprint per 5-minute session.
     if (request.method === "GET" && requestUrl.pathname === "/visitor") {
@@ -125,7 +126,6 @@ export default {
       return json({success:true,message:"Konfigurasi tugas sosial tersimpan."},200,allowedOrigin);
     }
 
-    const url = new URL(request.url);
     if (request.method === "GET" && url.pathname.endsWith("/verify")) {
       return json({success:true,message:"Kunci admin valid."},200,allowedOrigin);
     }
