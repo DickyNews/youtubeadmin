@@ -125,7 +125,15 @@ export default {
     let payload;
     try { payload = await request.json(); } catch { return json({success:false,message:"JSON tidak valid."},400,allowedOrigin); }
     if (payload.action !== "update_download_links") return json({success:false,message:"Action tidak dikenal."},400,allowedOrigin);
-    if (payload.mode !== "link") return json({success:false,message:"Publikasi otomatis saat ini hanya mendukung mode Link Dicky News."},400,allowedOrigin);
+    if (!["link","like"].includes(payload.mode)) return json({success:false,message:"Mode publikasi tidak dikenal."},400,allowedOrigin);
+    if (payload.mode === "like") {
+      let yt;
+      try { yt = new URL(String(payload.youtube_url || "")); } catch {}
+      if (!yt || yt.protocol !== "https:" || !["youtube.com","www.youtube.com","youtu.be","www.youtu.be"].includes(yt.hostname))
+        return json({success:false,message:"URL video YouTube HTTPS tidak valid."},400,allowedOrigin);
+      if (typeof payload.password !== "string" || !payload.password.trim() || payload.password.length > 200)
+        return json({success:false,message:"Password unlocker wajib diisi (maksimal 200 karakter)."},400,allowedOrigin);
+    }
     const items = payload.items && typeof payload.items === "object" && !Array.isArray(payload.items) ? payload.items : {};
     const targets = Object.keys(items);
     if (!targets.length || targets.some(t => !ALLOWED_TARGETS.has(t)))
@@ -142,7 +150,7 @@ export default {
     const dispatchedAt = Date.now();
     const dispatch = await gh(`/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,env,"POST",{
       ref: BRANCH,
-      inputs: { target_config: JSON.stringify(items) }
+      inputs: { target_config: JSON.stringify({ mode: payload.mode, items, youtube_url: payload.mode === "like" ? String(payload.youtube_url).trim() : "", password: payload.mode === "like" ? String(payload.password) : "" }) }
     });
     if (dispatch.status !== 204) {
       const detail = await dispatch.text();
