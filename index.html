@@ -88,7 +88,7 @@ if(pushButton)pushButton.addEventListener('click',async()=>{
   if(!ps){fail('Password belum diisi','Masukkan password unlocker untuk jalur VIP.');document.getElementById('publishPassword').focus();return;}
   const payload=JSON.stringify({yt:yt.href,ps});
   const bytes=new TextEncoder().encode(payload);let binary='';bytes.forEach(byte=>binary+=String.fromCharCode(byte));
-  const encoded=btoa(binary).replace(/=+$/,'').replace(/\\+/g,'-').replace(/\\//g,'_');
+  const encoded=btoa(binary).replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_');
   const generated='https://dickynews.github.io/linklikecomment/?v='+encoded;
   result.className='publish-result done';
   result.innerHTML='<span class="result-icon">✓</span><div style="min-width:0;flex:1"><strong>Link Like &amp; Comment berhasil dibuat</strong><p>Format asli linklikecomment dipertahankan. Password VIP membuka Web Utama dengan bypass; jalur Like &amp; Comment tetap menuju Web Utama dengan alur normal. Link MediaFire akhir tetap diatur pada Web Utama.</p><input id="generatedLikeLink" readonly value="'+generated+'" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px;border-radius:9px;border:1px solid #444;background:#09090b;color:#fff"><button type="button" id="copyGeneratedLikeLink" class="btn" style="margin-top:8px">Salin Link</button></div>';
