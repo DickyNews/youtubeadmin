@@ -97,6 +97,7 @@ export default {
     if (request.method === "GET" && requestUrl.pathname === "/social-config") {
       if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan konfigurasi belum tersedia."},503,allowedOrigin);
       let config=null; try { const raw=await env.DICKY_VISITOR_COUNTER.get("social_config"); config=raw?JSON.parse(raw):null; } catch {}
+      if (config && typeof config === "object") config.socialTiktok = "https://www.tiktok.com/@dickynewsofficial";
       return json({success:true,config},200,allowedOrigin);
     }
 
@@ -121,6 +122,7 @@ export default {
       if (body.action !== "update_social_config" || !body.config || typeof body.config !== "object") return json({success:false,message:"Permintaan konfigurasi tidak valid."},400,allowedOrigin);
       const config = {}, fields = ["taskYtName","taskYtLink","taskVideoName","taskVideoLink","socialMainYt","socialSecondYt","socialInstagram","socialTiktok","socialFacebook"];
       for (const field of fields) { const value=body.config[field]; if(typeof value!=="string"||!value.trim()||value.length>500)return json({success:false,message:"Kolom tidak valid: "+field},400,allowedOrigin); config[field]=value.trim(); }
+      config.socialTiktok = "https://www.tiktok.com/@dickynewsofficial";
       for (const field of ["taskYtLink","taskVideoLink","socialMainYt","socialSecondYt","socialInstagram","socialTiktok","socialFacebook"]) { let u; try{u=new URL(config[field]);}catch{} if(!u||u.protocol!=="https:")return json({success:false,message:"URL HTTPS tidak valid: "+field},400,allowedOrigin); }
       await env.DICKY_VISITOR_COUNTER.put("social_config",JSON.stringify(config));
       return json({success:true,message:"Konfigurasi tugas sosial tersimpan."},200,allowedOrigin);
