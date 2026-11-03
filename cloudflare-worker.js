@@ -138,6 +138,17 @@ export default {
     const auth = request.headers.get("Authorization") || "";
     if (auth !== "Bearer " + env.ADMIN_API_KEY) return json({success:false,message:"Akses admin tidak sah."},401,allowedOrigin);
 
+    if (request.method === "POST" && url.pathname === "/like-config") {
+      if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan konfigurasi belum tersedia."},503,allowedOrigin);
+      let body; try { body = await request.json(); } catch { return json({success:false,message:"JSON tidak valid."},400,allowedOrigin); }
+      if (body.action !== "update_like_config" || typeof body.yt !== "string" || body.yt.length > 2048) return json({success:false,message:"Konfigurasi Like & Comment tidak valid."},400,allowedOrigin);
+      let video; try { video = new URL(body.yt); } catch {}
+      if (!video || video.protocol !== "https:" || !["youtube.com","www.youtube.com","m.youtube.com","youtu.be","www.youtu.be"].includes(video.hostname)) return json({success:false,message:"URL video YouTube tidak valid."},400,allowedOrigin);
+      const config = { yt: video.href, updated_at: new Date().toISOString() };
+      await env.DICKY_VISITOR_COUNTER.put("like_config", JSON.stringify(config));
+      return json({success:true,message:"Konfigurasi Like & Comment tersimpan.",config},200,allowedOrigin);
+    }
+
     if (request.method === "POST" && url.pathname === "/social-config") {
       if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan konfigurasi belum tersedia."},503,allowedOrigin);
       let body; try { body = await request.json(); } catch { return json({success:false,message:"JSON tidak valid."},400,allowedOrigin); }

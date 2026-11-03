@@ -49,7 +49,7 @@ $('exportAll').onclick=()=>{try{validate();persist();let t=json();$('jsonOutput'
 
 const modeSelect=document.getElementById('publishMode');
 const likeFields=document.getElementById('likeCommentFields');
-function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('adminKeyField').hidden=on;document.getElementById('openDirectMediafire').hidden=on;document.getElementById('generatePush').textContent=on?'Generate Link Like & Comment':'Generate & Push Web Utama';document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;}
+function syncLikeFields(){const on=modeSelect.value==='like';document.getElementById('quickPublish').dataset.mode=on?'like':'link';likeFields.hidden=!on;document.querySelectorAll('.link-only').forEach(e=>e.hidden=on);document.getElementById('adminKeyField').hidden=false;document.getElementById('openDirectMediafire').hidden=on;document.getElementById('generatePush').textContent=on?'Generate Link Like & Comment':'Generate & Push Web Utama';document.getElementById('publishYoutube').required=on;document.getElementById('publishPassword').required=on;}
 modeSelect.addEventListener('change',syncLikeFields);syncLikeFields();
 document.querySelectorAll('.per-target-row').forEach(row=>{const c=row.querySelector('input[type="checkbox"]'),u=row.querySelector('.target-url'),v=row.querySelector('.target-version');const sync=()=>{u.hidden=!c.checked;v.hidden=!c.checked;u.required=c.checked;v.required=false;};c.addEventListener('change',sync);sync();});
 const PUSH_ENDPOINT='https://dickynews-publisher.alinkdicky45.workers.dev';
@@ -92,6 +92,9 @@ if(pushButton)pushButton.addEventListener('click',async()=>{
   let yt;try{yt=new URL(ytRaw)}catch(e){}
   if(!yt||yt.protocol!=='https:'||!['youtube.com','www.youtube.com','m.youtube.com','youtu.be','www.youtu.be'].includes(yt.hostname)){fail('Link YouTube tidak valid','Masukkan URL video YouTube HTTPS yang benar.');document.getElementById('publishYoutube').focus();return;}
   if(!ps){fail('Password belum diisi','Masukkan password unlocker untuk jalur VIP.');document.getElementById('publishPassword').focus();return;}
+  if(!adminKey){fail('Kunci admin diperlukan','Masukkan kunci admin untuk menyimpan konfigurasi Like & Comment ke pusat kendali.');return;}
+  pushButton.disabled=true;pushButton.textContent='Menyimpan…';
+  try{const saved=await fetch(PUSH_ENDPOINT+'/like-config',{method:'POST',headers:{'content-type':'application/json','Authorization':'Bearer '+adminKey},body:JSON.stringify({action:'update_like_config',yt:yt.href})});const savedData=await saved.json().catch(()=>({}));if(!saved.ok||savedData.success!==true)throw new Error(savedData.message||'Gagal menyimpan konfigurasi Like & Comment.');}catch(e){fail('Konfigurasi tidak tersimpan',String(e.message||e));return;}finally{pushButton.disabled=false;pushButton.textContent='Generate & Push Web Utama';}
   const payload=JSON.stringify({yt:yt.href,ps});
   const bytes=new TextEncoder().encode(payload);let binary='';
   bytes.forEach(byte=>binary+=String.fromCharCode(byte));
