@@ -47,6 +47,17 @@ function validMediaFire(value) {
   } catch { return false; }
 }
 
+function validTargetUrl(target, value) {
+  if (target === "wa_enhancer_ori" || target === "wa_enhancer_biz") {
+    try {
+      const u = new URL(value);
+      return u.protocol === "https:" && u.hostname === "github.com" &&
+        u.pathname.replace(/\/$/, "") === "/Dev4Mod/waenhancer";
+    } catch { return false; }
+  }
+  return validMediaFire(value);
+}
+
 async function gh(path, env, method = "GET", body) {
   return fetch("https://api.github.com" + path, {
     method,
@@ -214,8 +225,8 @@ export default {
       return json({success:false,message:"Pilih tombol yang valid."},400,allowedOrigin);
     for (const target of targets) {
       const item = items[target] || {};
-      if (!validMediaFire(String(item.mediafire_url || "")))
-        return json({success:false,message:"URL MediaFire HTTPS tidak valid untuk " + target + "."},400,allowedOrigin);
+      if (!validTargetUrl(target, String(item.mediafire_url || "")))
+        return json({success:false,message:"URL tujuan HTTPS tidak valid untuk " + target + "."},400,allowedOrigin);
       const suffix = String(item.version_suffix || "").trim();
       if (suffix && !/^[vV]?[0-9]+(?:[._+-][0-9A-Za-z]+)*$/.test(suffix))
         return json({success:false,message:"Format versi tidak valid untuk " + target + "."},400,allowedOrigin);
