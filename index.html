@@ -64,14 +64,20 @@ if(mainButton)mainButton.addEventListener('click',async()=>{
  const adminKey=getAdminKey();
  if(!adminKey){result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>Kunci admin diperlukan</strong><p>Isi kunci admin satu kali agar Web Utama dibuka dalam mode akses langsung admin. Setelah tersimpan, input otomatis terisi.</p></div>';return;}
  mainButton.disabled=true;
+ let popup=null;
  try{
+  popup=window.open('about:blank','_blank');
+  if(!popup)throw new Error('Popup diblokir browser. Izinkan popup untuk YouTube Admin lalu ulangi.');
   const response=await fetch(PUSH_ENDPOINT+'/verify',{headers:{'Authorization':'Bearer '+adminKey}});
   const data=await response.json().catch(()=>({}));
   if(!response.ok||data.success!==true)throw new Error(data.message||'Verifikasi admin gagal.');
-  localStorage.setItem('dickynews_admin_direct_until',String(Date.now()+8*60*60*1000));
-  window.open('https://official.dickynews.com/?admin_direct=1','_blank','noopener');
+  const ticketResponse=await fetch(PUSH_ENDPOINT+'/admin-ticket',{method:'POST',headers:{'Authorization':'Bearer '+adminKey}});
+  const ticketData=await ticketResponse.json().catch(()=>({}));
+  if(!ticketResponse.ok||ticketData.success!==true||!ticketData.ticket)throw new Error(ticketData.message||'Tiket akses admin gagal dibuat.');
+  popup.location.href='https://official.dickynews.com/?admin_direct=1&ticket='+encodeURIComponent(ticketData.ticket);
   result.className='publish-result';result.innerHTML='<span class="result-icon">✓</span><div><strong>Mode admin aktif selama 8 jam</strong><p>Tombol DOWNLOAD di Web Utama akan membuka link tujuan langsung pada browser ini.</p></div>';
  }catch(e){
+  if(popup&&!popup.closed)popup.close();
   result.className='publish-result failed';result.innerHTML='<span class="result-icon">!</span><div><strong>Verifikasi admin gagal</strong><p>'+String(e.message||'Kunci tidak cocok.')+'</p></div>';
  }finally{mainButton.disabled=false;}
 });

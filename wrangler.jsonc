@@ -3,7 +3,8 @@
   "main": "cloudflare-worker.js",
   "compatibility_date": "2026-10-20",
   "vars": {
-    "ALLOWED_ORIGIN": "https://dickynews.github.io"
+    "ALLOWED_ORIGIN": "https://dickynews.github.io",
+    "ALLOWED_ORIGINS": "https://dickynews.github.io,https://official.dickynews.com"
   },
   "kv_namespaces": [
     {

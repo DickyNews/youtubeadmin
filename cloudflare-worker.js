@@ -64,7 +64,8 @@ async function gh(path, env, method = "GET", body) {
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
-    const allowedOrigin = env.ALLOWED_ORIGIN || "https://dickynews.github.io";
+    const allowedOrigins = String(env.ALLOWED_ORIGINS || env.ALLOWED_ORIGIN || "https://dickynews.github.io").split(",").map(v => v.trim()).filter(Boolean);
+    const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
     const requestUrl = new URL(request.url);
     const url = requestUrl;
 
@@ -102,7 +103,7 @@ export default {
     }
 
     if (request.method === "OPTIONS") {
-      if (origin !== allowedOrigin) return new Response(null, {status: 403});
+      if (!allowedOrigins.includes(origin)) return new Response(null, {status: 403});
       return new Response(null, {status: 204, headers: {
         "access-control-allow-origin": allowedOrigin,
         "access-control-allow-methods": "POST,GET,OPTIONS",
@@ -111,7 +112,17 @@ export default {
         "vary": "Origin"
       }});
     }
-    if (origin !== allowedOrigin) return json({success:false,message:"Origin tidak diizinkan."},403,allowedOrigin);
+    if (!allowedOrigins.includes(origin)) return json({success:false,message:"Origin tidak diizinkan."},403,allowedOrigin);
+    if (request.method === "GET" && url.pathname === "/admin-ticket/consume") {
+      if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan tiket belum tersedia."},503,allowedOrigin);
+      const ticket = url.searchParams.get("ticket") || "";
+      if (!/^[a-f0-9]{48}$/.test(ticket)) return json({success:false,message:"Tiket admin tidak valid."},400,allowedOrigin);
+      const key = "admin_ticket:" + ticket;
+      const stored = await env.DICKY_VISITOR_COUNTER.get(key);
+      if (!stored) return json({success:false,message:"Tiket admin kedaluwarsa atau sudah digunakan."},401,allowedOrigin);
+      await env.DICKY_VISITOR_COUNTER.delete(key);
+      return json({success:true,expires_in:28800},200,allowedOrigin);
+    }
     if (!env.GITHUB_TOKEN || !env.ADMIN_API_KEY) return json({success:false,message:"Secret Worker belum lengkap."},503,allowedOrigin);
     const auth = request.headers.get("Authorization") || "";
     if (auth !== "Bearer " + env.ADMIN_API_KEY) return json({success:false,message:"Akses admin tidak sah."},401,allowedOrigin);
@@ -126,6 +137,13 @@ export default {
       for (const field of ["taskYtLink","taskVideoLink","socialMainYt","socialSecondYt","socialInstagram","socialTiktok","socialFacebook"]) { let u; try{u=new URL(config[field]);}catch{} if(!u||u.protocol!=="https:")return json({success:false,message:"URL HTTPS tidak valid: "+field},400,allowedOrigin); }
       await env.DICKY_VISITOR_COUNTER.put("social_config",JSON.stringify(config));
       return json({success:true,message:"Konfigurasi tugas sosial tersimpan."},200,allowedOrigin);
+    }
+
+    if (request.method === "POST" && url.pathname === "/admin-ticket") {
+      if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan tiket belum tersedia."},503,allowedOrigin);
+      const ticket = [...crypto.getRandomValues(new Uint8Array(24))].map(b => b.toString(16).padStart(2,"0")).join("");
+      await env.DICKY_VISITOR_COUNTER.put("admin_ticket:" + ticket, "1", {expirationTtl:60});
+      return json({success:true,ticket,expires_in:60},200,allowedOrigin);
     }
 
     if (request.method === "GET" && url.pathname.endsWith("/verify")) {
