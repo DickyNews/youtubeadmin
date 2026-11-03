@@ -232,10 +232,10 @@ export default {
         return json({success:false,message:"Format versi tidak valid untuk " + target + "."},400,allowedOrigin);
     }
 
-    const dispatchedAt = Date.now();
+    const requestId = crypto.randomUUID();
     const dispatch = await gh(`/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,env,"POST",{
       ref: BRANCH,
-      inputs: { target_config: JSON.stringify({ mode: payload.mode, items, youtube_url: payload.mode === "like" ? String(payload.youtube_url).trim() : "", password: payload.mode === "like" ? String(payload.password) : "" }) }
+      inputs: { target_config: JSON.stringify({ request_id: requestId, mode: payload.mode, items, youtube_url: payload.mode === "like" ? String(payload.youtube_url).trim() : "", password: payload.mode === "like" ? String(payload.password) : "" }) }
     });
     if (dispatch.status !== 204) {
       const detail = await dispatch.text();
@@ -250,7 +250,7 @@ export default {
       const runsData = await runsResponse.json();
       const run = (runsData.workflow_runs || []).find(item =>
         item.event === "workflow_dispatch" &&
-        Date.parse(item.created_at || "") >= dispatchedAt - 5000
+        String(item.display_title || "").includes(requestId)
       );
       if (run) runId = String(run.id);
     }
