@@ -102,6 +102,28 @@ export default {
       return json({success:true,config},200,allowedOrigin);
     }
 
+    if (request.method === "GET" && url.pathname === "/unlocker") {
+      if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan unlocker belum tersedia."},503,allowedOrigin);
+      const token = url.searchParams.get("token") || "";
+      if (!/^[a-f0-9]{32}$/.test(token)) return json({success:false,message:"Token unlocker tidak valid."},400,allowedOrigin);
+      let record=null; try { const raw=await env.DICKY_VISITOR_COUNTER.get("unlocker:"+token); record=raw?JSON.parse(raw):null; } catch {}
+      if (!record || typeof record.yt !== "string") return json({success:false,message:"Link unlocker kedaluwarsa atau tidak ditemukan."},404,allowedOrigin);
+      return json({success:true,yt:record.yt},200,allowedOrigin);
+    }
+
+    if (request.method === "POST" && url.pathname === "/unlocker/verify") {
+      if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan unlocker belum tersedia."},503,allowedOrigin);
+      let body; try { body=await request.json(); } catch { return json({success:false,message:"JSON tidak valid."},400,allowedOrigin); }
+      const token=String(body.token||""), password=String(body.password||"");
+      if (!/^[a-f0-9]{32}$/.test(token) || !password || password.length>200) return json({success:false,message:"Data verifikasi tidak valid."},400,allowedOrigin);
+      let record=null; try { const raw=await env.DICKY_VISITOR_COUNTER.get("unlocker:"+token); record=raw?JSON.parse(raw):null; } catch {}
+      if (!record || !record.password_hash) return json({success:false,message:"Link unlocker kedaluwarsa atau tidak ditemukan."},404,allowedOrigin);
+      const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(password));
+      const hash=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+      if (hash !== record.password_hash) return json({success:false,message:"Password salah."},401,allowedOrigin);
+      return json({success:true},200,allowedOrigin);
+    }
+
     if (request.method === "OPTIONS") {
       if (!allowedOrigins.includes(origin)) return new Response(null, {status: 403});
       return new Response(null, {status: 204, headers: {
@@ -137,6 +159,21 @@ export default {
       for (const field of ["taskYtLink","taskVideoLink","socialMainYt","socialSecondYt","socialInstagram","socialTiktok","socialFacebook"]) { let u; try{u=new URL(config[field]);}catch{} if(!u||u.protocol!=="https:")return json({success:false,message:"URL HTTPS tidak valid: "+field},400,allowedOrigin); }
       await env.DICKY_VISITOR_COUNTER.put("social_config",JSON.stringify(config));
       return json({success:true,message:"Konfigurasi tugas sosial tersimpan."},200,allowedOrigin);
+    }
+
+    if (request.method === "POST" && url.pathname === "/unlocker") {
+      if (!env.DICKY_VISITOR_COUNTER) return json({success:false,message:"Penyimpanan unlocker belum tersedia."},503,allowedOrigin);
+      let body; try { body=await request.json(); } catch { return json({success:false,message:"JSON tidak valid."},400,allowedOrigin); }
+      if (body.action !== "create_like_unlocker") return json({success:false,message:"Action unlocker tidak valid."},400,allowedOrigin);
+      let yt; try { yt=new URL(String(body.youtube_url||"")); } catch {}
+      const password=String(body.password||"");
+      if (!yt || yt.protocol!=="https:" || !["youtube.com","www.youtube.com","m.youtube.com","youtu.be","www.youtu.be"].includes(yt.hostname)) return json({success:false,message:"URL video YouTube HTTPS tidak valid."},400,allowedOrigin);
+      if (!password || password.length>200) return json({success:false,message:"Password kosong atau terlalu panjang."},400,allowedOrigin);
+      const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(password));
+      const passwordHash=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+      const token=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,"0")).join("");
+      await env.DICKY_VISITOR_COUNTER.put("unlocker:"+token,JSON.stringify({yt:yt.href,password_hash:passwordHash}),{expirationTtl:2592000});
+      return json({success:true,token,expires_in:2592000},200,allowedOrigin);
     }
 
     if (request.method === "POST" && url.pathname === "/admin-ticket") {

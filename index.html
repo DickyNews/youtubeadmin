@@ -92,12 +92,14 @@ if(pushButton)pushButton.addEventListener('click',async()=>{
   let yt;try{yt=new URL(ytRaw)}catch(e){}
   if(!yt||yt.protocol!=='https:'||!['youtube.com','www.youtube.com','m.youtube.com','youtu.be','www.youtu.be'].includes(yt.hostname)){fail('Link YouTube tidak valid','Masukkan URL video YouTube HTTPS yang benar.');document.getElementById('publishYoutube').focus();return;}
   if(!ps){fail('Password belum diisi','Masukkan password unlocker untuk jalur VIP.');document.getElementById('publishPassword').focus();return;}
-  const payload=JSON.stringify({yt:yt.href,ps});
-  const bytes=new TextEncoder().encode(payload);let binary='';bytes.forEach(byte=>binary+=String.fromCharCode(byte));
-  const encoded=btoa(binary).replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_');
-  const generated='https://official.dickynews.com/?module=like&v='+encoded;
+  if(!adminKey){fail('Kunci admin diperlukan','Masukkan kunci admin untuk membuat link unlocker.');return;}
+  result.className='publish-result';result.innerHTML='<span class="result-icon">…</span><div><strong>Membuat link unlocker aman…</strong><p>Password tidak dimasukkan ke URL.</p></div>';
+  const createResponse=await fetch(PUSH_ENDPOINT+'/unlocker',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+adminKey},body:JSON.stringify({action:'create_like_unlocker',youtube_url:yt.href,password:ps})});
+  const createData=await createResponse.json().catch(()=>({}));
+  if(!createResponse.ok||createData.success!==true||!createData.token){fail('Gagal membuat unlocker',createData.message||'Worker tidak dapat menyimpan unlocker.');return;}
+  const generated='https://official.dickynews.com/?module=like&token='+encodeURIComponent(createData.token);
   result.className='publish-result done';
-  result.innerHTML='<span class="result-icon">✓</span><div style="min-width:0;flex:1"><strong>Link Like &amp; Comment berhasil dibuat</strong><p>Format asli linklikecomment dipertahankan. Password VIP membuka Web Utama dengan bypass; jalur Like &amp; Comment tetap menuju Web Utama dengan alur normal. Link MediaFire akhir tetap diatur pada Web Utama.</p><input id="generatedLikeLink" readonly value="'+generated+'" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px;border-radius:9px;border:1px solid #444;background:#09090b;color:#fff"><button type="button" id="copyGeneratedLikeLink" class="btn" style="margin-top:8px">Salin Link</button></div>';
+  result.innerHTML='<span class="result-icon">✓</span><div style="min-width:0;flex:1"><strong>Link Like &amp; Comment berhasil dibuat</strong><p>Password disimpan sebagai hash di Worker KV dan tidak ditampilkan di URL. Link berlaku 30 hari. Link MediaFire akhir tetap diatur pada Web Utama.</p><input id="generatedLikeLink" readonly value="'+generated+'" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px;border-radius:9px;border:1px solid #444;background:#09090b;color:#fff"><button type="button" id="copyGeneratedLikeLink" class="btn" style="margin-top:8px">Salin Link</button></div>';
   document.getElementById('copyGeneratedLikeLink').addEventListener('click',async()=>{const field=document.getElementById('generatedLikeLink');try{await navigator.clipboard.writeText(generated);document.getElementById('copyGeneratedLikeLink').textContent='Link tersalin';}catch(e){field.focus();field.select();document.getElementById('copyGeneratedLikeLink').textContent='Pilih lalu salin link';}});
   return;
  }
